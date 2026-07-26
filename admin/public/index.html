@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>管理后台 - 个人主页</title>
+
+<!-- ============================================================
+  📝 管理后台说明
+  ------------------------------------------------------------
+  这是一个单页应用（SPA），和主页同风格（毛玻璃+深色主题）。
+  功能：
+  - 登录验证（JWT Token）
+  - 个人资料编辑
+  - 技能管理（增删改+百分比）
+  - 项目管理（增删改）
+  - 生活碎片管理
+  - 社交链接管理
+  - 主题色切换
+  - 数据导入/导出
+  - 密码修改
+
+  部署：和主页一起由 server.js 托管
+  访问：http://localhost:3000/admin
+  ============================================================ -->
+
+<style>
+/* ========== CSS 变量 ========== */
+:root {
+  --c1: #ff527c;
+  --c2: #00ffff;
+  --c-accent: #ff449e;
+  --text: rgba(255,255,255,0.92);
+  --text-soft: rgba(255,255,255,0.65);
+  --text-faint: rgba(255,255,255,0.38);
+  --bg: #0a0a18;
+  --card: rgba(255,255,255,0.07);
+  --card-hover: rgba(255,255,255,0.10);
+  --border: rgba(255,255,255,0.14);
+  --radius: 16px;
+  --font: 'PingFang SC', 'HarmonyOS Sans', 'Microsoft YaHei', sans-serif;
+  --mono: 'SF Mono', 'Consolas', monospace;
+}
+
+/* ========== 全局 ========== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font); color: var(--text); background: var(--bg);
+  min-height: 100vh; overflow-x: hidden;
+  -webkit-user-select: none; user-select: none;
+}
+input, textarea { -webkit-user-select: text; user-select: text; }
+::selection { background: rgba(255,82,124,0.25); color: #fff; }
+
+/* ========== 背景（和主页一致的水墨晕染） ========== */
+.bg-base { position: fixed; inset: 0; z-index: -4; background: #080812; }
+.bg-ink {
+  position: fixed; inset: -10%; z-index: -3;
+  background:
+    radial-gradient(ellipse 45% 55% at 20% 30%, var(--c1) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 50% at 80% 70%, var(--c2) 0%, transparent 55%),
+    radial-gradient(ellipse 30% 35% at 60% 20%, var(--c-accent) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 60% at 50% 50%, rgba(20,20,60,0.4) 0%, transparent 70%);
+  filter: blur(60px); opacity: 0.45; transition: background 1s;
+}
+.bg-grain {
+  position: fixed; inset: 0; z-index: -1; opacity: 0.15; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+  background-size: 128px 128px; mix-blend-mode: overlay;
+}
+
+/* ========== 毛玻璃卡片 ========== */
+.glass {
+  background: var(--card);
+  backdrop-filter: blur(30px) saturate(180%) brightness(108%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%) brightness(108%);
+  border: 1px solid var(--border);
+  border-top-color: rgba(255,255,255,0.20);
+  border-left-color: rgba(255,255,255,0.16);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.14);
+  position: relative; overflow: hidden;
+  transition: all 0.3s;
+}
+.glass::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 50%, rgba(255,255,255,0.02) 100%);
+  pointer-events: none; border-radius: inherit;
+}
+
+/* ========== 布局 ========== */
+.admin-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+/* ========== 侧边栏 ========== */
+.sidebar {
+  background: rgba(15,15,30,0.85);
+  backdrop-filter: blur(40px); border-right: 1px solid var(--border);
+  padding: 24px 16px; position: sticky; top: 0; height: 100vh;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sidebar-brand {
+  font-size: 16px; font-weight: 800; color: var(--text);
+  padding: 0 12px 20px; border-bottom: 1px solid var(--border); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.sidebar-brand .dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--c1);
+  box-shadow: 0 0 8px var(--c1);
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: 12px; cursor: pointer;
+  font-size: 13px; color: var(--text-soft); transition: all 0.25s;
+  border: 1px solid transparent;
+}
+.nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.nav-item.active {
+  background: rgba(255,82,124,0.10); color: var(--text);
+  border-color: rgba(255,82,124,0.18);
+  box-shadow: 0 0 16px rgba(255,82,124,0.06);
+}
+.nav-item .nav-icon { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.nav-item.active .nav-icon { stroke: var(--c1); filter: drop-shadow(0 0 3px var(--c1)); }
+
+.sidebar-footer { margin-top: auto; padding: 12px; }
+.user-info {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 12px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+}
+.user-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #fff;
+}
+.user-name { font-size: 12px; color: var(--text); font-weight: 600; }
+.user-role { font-size: 10px; color: var(--text-faint); }
+.btn-logout {
+  width: 100%; margin-top: 10px; padding: 8px; border-radius: 10px;
+  background: rgba(255,82,124,0.08); border: 1px solid rgba(255,82,124,0.15);
+  color: var(--c1); font-size: 12px; cursor: pointer; transition: all 0.25s;
+}
+.btn-logout:hover { background: rgba(255,82,124,0.15); }
+
+/* ========== 主内容区 ========== */
+.main-content { padding: 32px 40px; max-width: 900px; }
+
+/* ========== 页面标题 ========== */
+.page-header { margin-bottom: 28px; }
+.page-title { font-size: 24px; font-weight: 800; margin-bottom: 4px;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.12), 0 2px 4px rgba(0,0,0,0.20); }
+.page-subtitle { font-size: 13px; color: var(--text-soft); }
+
+/* ========== 表单 ========== */
+.form-group { margin-bottom: 20px; }
+.form-label {
+  display: block; font-size: 12px; font-weight: 600; color: var(--text-soft);
+  margin-bottom: 8px; letter-spacing: 0.5px;
+}
+.form-input, .form-textarea, .form-select {
+  width: 100%; padding: 12px 16px; border-radius: 12px;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  color: var(--text); font-size: 14px; font-family: var(--font);
+  transition: all 0.25s; outline: none;
+}
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+  border-color: rgba(255,82,124,0.35);
+  box-shadow: 0 0 0 3px rgba(255,82,124,0.08);
+  background: rgba(255,255,255,0.07);
+}
+.form-textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* ========== 按钮 ========== */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 22px; border-radius: 12px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border); transition: all 0.3s;
+  text-decoration: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--c1), #c43a6a); color: #fff;
+  border-color: rgba(255,255,255,0.15);
+  box-shadow: 0 4px 16px rgba(255,82,124,0.25);
+}
+.btn-primary:hover { box-shadow: 0 6px 24px rgba(255,82,124,0.40); transform: translateY(-1px); }
+.btn-ghost { background: rgba(255,255,255,0.04); color: var(--text); }
+.btn-ghost:hover { background: rgba(255,255,255,0.10); }
+.btn-danger { background: rgba(255,59,48,0.10); color: #ff6b6b; border-color: rgba(255,59,48,0.20); }
+.btn-danger:hover { background: rgba(255,59,48,0.18); }
+.btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
+
+/* ========== 卡片 ========== */
+.section-card { padding: 28px; margin-bottom: 24px; }
+.section-title {
+  font-size: 14px; font-weight: 700; color: var(--text);
+  margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.section-title::before {
+  content: ''; width: 3px; height: 14px; border-radius: 2px;
+  background: linear-gradient(180deg, var(--c1), var(--c2));
+}
+
+/* ========== 列表项 ========== */
+.list-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 16px; border-radius: 12px;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 10px; transition: all 0.25s;
+}
+.list-item:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.10); }
+.list-item .item-info { flex: 1; }
+.list-item .item-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.list-item .item-desc { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+.list-item .item-actions { display: flex; gap: 8px; }
+
+/* ========== 进度条编辑 ========== */
+.skill-edit { display: flex; align-items: center; gap: 14px; }
+.skill-edit input[type="range"] {
+  flex: 1; -webkit-appearance: none; height: 6px; border-radius: 3px;
+  background: rgba(255,255,255,0.10); outline: none;
+}
+.skill-edit input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--c1); cursor: pointer; box-shadow: 0 0 8px var(--c1);
+}
+.skill-pct {
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  color: var(--c1); min-width: 40px; text-align: right;
+}
+
+/* ========== 登录页 ========== */
+.login-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(5,5,15,0.85); backdrop-filter: blur(20px);
+}
+.login-card {
+  width: 400px; padding: 48px 40px; text-align: center;
+}
+.login-card .logo {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--c1), var(--c2), var(--c-accent), var(--c1));
+  margin: 0 auto 24px; display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 800; color: #fff;
+  animation: ringSpin 8s linear infinite;
+}
+@keyframes ringSpin { to { transform: rotate(360deg); } }
+.login-card h1 { font-size: 22px; margin-bottom: 8px; }
+.login-card p { font-size: 13px; color: var(--text-soft); margin-bottom: 32px; }
+.login-card .form-input { margin-bottom: 16px; text-align: center; }
+.login-card .btn { width: 100%; justify-content: center; padding: 14px; font-size: 14px; }
+.login-error {
+  font-size: 12px; color: #ff6b6b; margin-top: 12px; min-height: 16px;
+}
+
+/* ========== Toast 提示 ========== */
+.toast-container {
+  position: fixed; top: 24px; right: 24px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  padding: 14px 20px; border-radius: 12px; font-size: 13px; font-weight: 500;
+  backdrop-filter: blur(20px); animation: toastIn 0.3s ease;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.toast-success { background: rgba(52,199,89,0.15); border: 1px solid rgba(52,199,89,0.3); color: #4cd964; }
+.toast-error   { background: rgba(255,59,48,0.15); border: 1px solid rgba(255,59,48,0.3); color: #ff6b6b; }
+.toast-info    { background: rgba(0,122,255,0.15); border: 1px solid rgba(0,122,255,0.3); color: #64b5f6; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+
+/* ========== 模态框 ========== */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal {
+  width: 480px; max-height: 80vh; overflow-y: auto;
+  padding: 32px; transform: translateY(20px); transition: transform 0.3s;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.modal-title { font-size: 18px; font-weight: 700; }
+.modal-close {
+  width: 32px; height: 32px; border-radius: 50%; border: none;
+  background: rgba(255,255,255,0.08); color: var(--text-soft);
+  cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
+}
+.modal-close:hover { background: rgba(255,255,255,0.15); }
+
+/* ========== 主题色选择 ========== */
+.theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.theme-card {
+  padding: 16px; border-radius: 12px; cursor: pointer; text-align: center;
+  border: 2px solid transparent; transition: all 0.25s;
+}
+.theme-card:hover { background: rgba(255,255,255,0.05); }
+.theme-card.active { border-color: var(--c1); background: rgba(255,82,124,0.08); }
+.theme-preview {
+  width: 100%; height: 40px; border-radius: 8px; margin-bottom: 8px;
+  display: flex; overflow: hidden;
+}
+.theme-preview span { flex: 1; }
+.theme-card .name { font-size: 12px; font-weight: 600; }
+.theme-card .desc { font-size: 10px; color: var(--text-faint); margin-top: 2px; }
+
+/* ========== 空状态 ========== */
+.empty-state {
+  text-align: center; padding: 40px 20px;
+  color: var(--text-faint); font-size: 13px;
+}
+.empty-state .icon { font-size: 32px; margin-bottom: 12px; opacity: 0.3; }
+
+/* ========== 工具区 ========== */
+.toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .admin-layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; flex-direction: row; overflow-x: auto; }
+  .sidebar-footer { display: none; }
+  .main-content { padding: 20px; }
+  .form-row { grid-template-columns: 1fr; }
+}
+
+/* ========== 滚动条 ========== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+</style>
+</head>
+
+<body>
+
+<!-- 背景层 -->
+<div class="bg-base"></div>
+<div class="bg-ink" id="bgInk"></div>
+<div class="bg-grain"></div>
+
+<!-- ========== 登录页 ========== -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="glass login-card">
+    <div class="logo">A</div>
+    <h1>管理后台</h1>
+    <p>登录后修改你的个人主页内容</p>
+    <input class="form-input" type="text" id="loginUser" placeholder="用户名" value="admin">
+    <input class="form-input" type="password" id="loginPwd" placeholder="密码">
+    <button class="btn btn-primary" onclick="doLogin()">登 录</button>
+    <div class="login-error" id="loginError"></div>
+    <p style="font-size:10px;color:var(--text-faint);margin-top:20px;">默认账号: admin / admin123</p>
+  </div>
+</div>
+
+<!-- ========== 主界面 ========== -->
+<div class="admin-layout" id="appMain" style="display:none">
+  <!-- 侧边栏 -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="dot"></div>
+      <span>管理后台</span>
+    </div>
+    <nav id="navList">
+      <div class="nav-item active" data-page="profile" onclick="switchPage('profile',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        个人资料
+      </div>
+      <div class="nav-item" data-page="skills" onclick="switchPage('skills',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24"><polygon points="12,2 15,8.5 22,9.5 17,14.5 18.5,21.5 12,18 5.5,21.5 7,14.5 2,9.5 9,8.5"/></svg>
+        技能管理
+      </div>
+      <div class="nav-item" data-page="projects" onclick="switchPage('projects',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M2 12h4l2-7 5 14 3-9h6"/><circle cx="12" cy="12" r="10"/></svg>
+        项目管理
+      </div>
+      <div class="nav-item" data-page="life" onclick="switchPage('life',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.8 5.6 21.2 8 14.4 2 9.2h7.6z"/></svg>
+        生活碎片
+      </div>
+      <div class="nav-item" data-page="social" onclick="switchPage('social',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        社交链接
+      </div>
+      <div class="nav-item" data-page="theme" onclick="switchPage('theme',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor" fill-opacity="0.2"/></svg>
+        主题设置
+      </div>
+      <div class="nav-item" data-page="security" onclick="switchPage('security',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        安全设置
+      </div>
+      <div class="nav-item" data-page="data" onclick="switchPage('data',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        数据管理
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" id="sideAvatar">A</div>
+        <div>
+          <div class="user-name" id="sideName">admin</div>
+          <div class="user-role">管理员</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">退出登录</button>
+    </div>
+  </aside>
+
+  <!-- 主内容区 -->
+  <main class="main-content" id="mainContent">
+    <!-- 各页面内容由 JS 动态渲染 -->
+  </main>
+</div>
+
+<!-- Toast 容器 -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ========== 模态框 ========== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="glass modal" id="modalContent">
+    <!-- 动态内容 -->
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   🔧 全局状态
+   ============================================================ */
+const API_BASE = '';  // 同域，空字符串即可
+let TOKEN = localStorage.getItem('admin_token') || '';
+let CURRENT_DATA = null;  // 缓存的全量数据
+
+/* ---------- Toast 提示 ---------- */
+function toast(msg, type = 'success') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+/* ---------- API 请求封装 ---------- */
+async function api(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+  const res = await fetch(API_BASE + path, { ...options, headers });
+  const json = await res.json().catch(() => ({ code: res.status, msg: res.statusText }));
+  if (json.code === 401) { doLogout(); throw new Error('登录已过期'); }
+  return json;
+}
+
+/* ============================================================
+   🔐 登录 / 登出
+   ============================================================ */
+async function doLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPwd').value;
+  const errEl = document.getElementById('loginError');
+  if (!username || !password) { errEl.textContent = '请输入用户名和密码'; return; }
+  try {
+    const res = await api('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    });
+    if (res.code === 200) {
+      TOKEN = res.data.token;
+      localStorage.setItem('admin_token', TOKEN);
+      document.getElementById('sideName').textContent = res.data.username;
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('appMain').style.display = '';
+      errEl.textContent = '';
+      loadAllData();
+      toast('登录成功', 'success');
+    } else {
+      errEl.textContent = res.msg;
+    }
+  } catch (e) {
+    errEl.textContent = '网络错误：' + e.message;
+  }
+}
+
+function doLogout() {
+  TOKEN = '';
+  localStorage.removeItem('admin_token');
+  document.getElementById('loginOverlay').style.display = '';
+  document.getElementById('appMain').style.display = 'none';
+  toast('已退出登录', 'info');
+}
+
+/* 回车登录 */
+document.getElementById('loginPwd').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+/* ============================================================
+   📡 数据加载
+   ============================================================ */
+async function loadAllData() {
+  try {
+    const res = await api('/api/all');
+    if (res.code === 200) {
+      CURRENT_DATA = res.data;
+      // 默认显示个人资料页
+      switchPage('profile', document.querySelector('.nav-item.active'));
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/* ============================================================
+   📄 页面切换 & 渲染
+   ============================================================ */
+function switchPage(page, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const main = document.getElementById('mainContent');
+  switch (page) {
+    case 'profile':  renderProfile(main); break;
+    case 'skills':   renderSkills(main); break;
+    case 'projects': renderProjects(main); break;
+    case 'life':     renderLife(main); break;
+    case 'social':   renderSocial(main); break;
+    case 'theme':    renderTheme(main); break;
+    case 'security': renderSecurity(main); break;
+    case 'data':     renderData(main); break;
+  }
+}
+
+/* ---------- 个人资料 ---------- */
+function renderProfile(main) {
+  const p = CURRENT_DATA.profile;
+  main.innerHTML = `
+    <div class="page-header">
+      <div class="page-title">个人资料</div>
+      <div class="page-subtitle">修改后点击保存，主页会同步更新</div>
+    </div>
+    <div class="glass section-card">
+      <div class="section-title">基本信息</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">姓名</label>
+          <input class="form-input" id="f_name" value="${p.name||''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">方向/头衔</label>
+          <input class="form-input" id="f_title" value="${p.title||''}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">城市</label>
+          <input class="form-input" id="f_city" value="${p.city||''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">职业</label>
+          <input class="form-input" id="f_job" value="${p.job||''}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">爱好</label>
+        <input class="form-input" id="f_hobby" value="${p.hobby||''}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">头像文字（2个字母，无图片时显示）</label>
+        <input class="form-input" id="f_avatar" value="${p.avatarText||''}" maxlength="3" style="width:120px;text-align:center;font-size:18px;font-weight:700">
+      </div>
+      <div class="form-group">
+        <label class="form-label">头像图片（上传后优先显示图片）</label>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div id="avatarPreview" style="width:64px;height:64px;border-radius:50%;overflow:hidden;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--text-soft)">
+            ${p.avatarUrl ? `<img src="${p.avatarUrl}" style="width:100%;height:100%;object-fit:cover">` : (p.avatarText||'YN')}
+          </div>
+          <div style="flex:1">
+            <input type="file" id="f_avatarFile" accept="image/*" style="display:none" onchange="uploadAvatar(event)">
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('f_avatarFile').click()">📷 选择图片</button>
+            <button class="btn btn-danger btn-sm" onclick="clearAvatar()" ${p.avatarUrl?'':'disabled'} style="${p.avatarUrl?'':'opacity:0.3'}">移除图片</button>
+            <div style="font-size:11px;color:var(--text-faint);margin-top:6px">支持 JPG/PNG/WebP，建议 256×256 以上</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="glass section-card">
+      <div class="section-title">介绍信息</div>
+      <div class="form-group">
+        <label class="form-label">欢迎语</label>
+        <input class="form-input" id="f_greeting" value="${p.heroGreeting||''}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hero 名字</label>
+        <input class="form-input" id="f_heroName" value="${p.heroName||''}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">个人简介</label>
+        <textarea class="form-textarea" id="f_heroDesc">${p.heroDesc||''}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">详细 Bio（支持换行）</label>
+        <textarea class="form-textarea" id="f_bio" style="min-height:100px">${p.bio||''}</textarea>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <button class="btn btn-primary" onclick="saveProfile()">💾 保存修改</button>
+    </div>
+  `;
+}
+
+async function saveProfile() {
+  const data = {
+    name: document.getElementById('f_name').value,
+    title: document.getElementById('f_title').value,
+    city: document.getElementById('f_city').value,
+    job: document.getElementById('f_job').value,
+    hobby: document.getElementById('f_hobby').value,
+    avatarText: document.getElementById('f_avatar').value,
+    avatarUrl: CURRENT_DATA.profile.avatarUrl || '',  // 保留已有头像路径
+    heroGreeting: document.getElementById('f_greeting').value,
+    heroName: document.getElementById('f_heroName').value,
+    heroDesc: document.getElementById('f_heroDesc').value,
+    bio: document.getElementById('f_bio').value,
+  };
+  const res = await api('/api/profile', { method: 'PUT', body: JSON.stringify(data) });
+  if (res.code === 200) { CURRENT_DATA.profile = data; toast('资料已保存'); }
+  else { toast(res.msg, 'error'); }
+}
+
+/* ---------- 头像上传 ---------- */
+async function uploadAvatar(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  // 校验大小（5MB）
+  if (file.size > 5 * 1024 * 1024) { toast('图片不能超过 5MB', 'error'); return; }
+  // 转 base64 直接存（简单方案，不依赖额外存储）
+  const reader = new FileReader();
+  reader.onload = async function(ev) {
+    const base64 = ev.target.result;  // data:image/png;base64,...
+    // 更新预览
+    const preview = document.getElementById('avatarPreview');
+    preview.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover">`;
+    // 保存到 profile
+    CURRENT_DATA.profile.avatarUrl = base64;
+    // 同步更新头像文字显示
+    document.getElementById('f_avatar').value = file.name.substring(0,2).toUpperCase();
+    toast('头像已更新，点击保存生效', 'info');
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ---------- 移除头像 ---------- */
+function clearAvatar() {
+  CURRENT_DATA.profile.avatarUrl = '';
+  const preview = document.getElementById('avatarPreview');
+  const text = CURRENT_DATA.profile.avatarText || 'YN';
+  preview.innerHTML = text;
+  document.getElementById('f_avatarFile').value = '';
+  toast('头像已移除，将显示文字', 'info');
+}
+
+/* ---------- 技能管理 ---------- */
+function renderSkills(main) {
+  const skills = CURRENT_DATA.skills || [];
+  let html = `
+    <div class="page-header">
+      <div class="page-title">技能管理</div>
+      <div class="page-subtitle">拖动滑块调整百分比，主页圆环会同步更新</div>
+    </div>
+    <div class="glass section-card">
+      <div class="section-title">技能列表</div>
+      <div id="skillsList">
+  `;
+  skills.forEach((s, i) => {
+    html += `
+      <div class="list-item" data-idx="${i}">
+        <div style="width:24px;color:var(--text-faint);font-size:12px;font-family:var(--mono)">${i+1}</div>
+        <input class="form-input" value="${s.name}" style="max-width:180px" onchange="updateSkillName(${i},this.value)">
+        <div class="skill-edit" style="flex:1">
+          <input type="range" min="0" max="100" value="${s.pct}" oninput="updateSkillPct(${i},this.value)">
+          <span class="skill-pct" id="pct_${i}">${s.pct}%</span>
+        </div>
+        <div class="item-actions">
+          <button class="btn btn-sm btn-danger" onclick="removeSkill(${i})">删除</button>
+        </div>
+      </div>
+    `;
+  });
+  html += `</div></div>`;
+  html += `
+    <div class="glass section-card">
+      <div class="section-title">新增技能</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">技能名称</label>
+          <input class="form-input" id="newSkillName" placeholder="如：Python">
+        </div>
+        <div class="form-group">
+          <label class="form-label">熟练度 (0-100)</label>
+          <input class="form-input" id="newSkillPct" type="number" min="0" max="100" value="75">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addSkill()">＋ 添加技能</button>
+    </div>
+  `;
+  html += `<div style="text-align:right;margin-top:8px"><button class="btn btn-primary" onclick="saveSkills()">💾 保存全部</button></div>`;
+  main.innerHTML = html;
+}
+
+function updateSkillPct(i, val) { document.getElementById('pct_' + i).textContent = val + '%'; }
+function updateSkillName(i, name) { CURRENT_DATA.skills[i].name = name; }
+function removeSkill(i) {
+  CURRENT_DATA.skills.splice(i, 1);
+  renderSkills(document.getElementById('mainContent'));
+}
+function addSkill() {
+  const name = document.getElementById('newSkillName').value.trim();
+  const pct = parseInt(document.getElementById('newSkillPct').value) || 0;
+  if (!name) return toast('请输入技能名称', 'error');
+  CURRENT_DATA.skills.push({ name, pct });
+  renderSkills(document.getElementById('mainContent'));
+}
+async function saveSkills() {
+  const res = await api('/api/skills', { method: 'PUT', body: JSON.stringify(CURRENT_DATA.skills) });
+  if (res.code === 200) toast('技能已保存'); else toast(res.msg, 'error');
+}
+
+/* ---------- 项目管理 ---------- */
+function renderProjects(main) {
+  const projects = CURRENT_DATA.projects || [];
+  let html = `
+    <div class="page-header">
+      <div class="page-title">项目管理</div>
+      <div class="page-subtitle">管理主页展示的项目卡片</div>
+    </div>
+    <div class="glass section-card">
+      <div class="section-title">项目列表</div>
+  `;
+  if (projects.length === 0) {
+    html += `<div class="empty-state"><div class="icon">📭</div>暂无项目，点击下方添加</div>`;
+  }
+  projects.forEach((p, i) => {
+    html += `
+      <div class="list-item">
+        <div style="width:24px;color:var(--text-faint);font-size:12px;font-family:var(--mono)">${i+1}</div>
+        <div class="item-info">
+          <div class="item-name">${p.title}</div>
+          <div class="item-desc">${p.desc}</div>
+          <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,0.06);color:var(--text-faint)">${p.tag||''}</span></div>
+        </div>
+        <div class="item-actions">
+          <button class="btn btn-sm btn-ghost" onclick="editProject(${p.id})">编辑</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteProject(${p.id})">删除</button>
+        </div>
+      </div>
+    `;
+  });
+  html += `</div>`;
+  html += `
+    <div class="glass section-card">
+      <div class="section-title">新增项目</div>
+      <div class="form-group">
+        <label class="form-label">项目标题</label>
+        <input class="form-input" id="newProjTitle" placeholder="如：我的作品集">
+      </div>
+      <div class="form-group">
+        <label class="form-label">项目描述</label>
+        <textarea class="form-textarea" id="newProjDesc" placeholder="一句话描述这个项目"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">标签</label>
+        <input class="form-input" id="newProjTag" placeholder="如：Web开发" style="max-width:200px">
+      </div>
+      <button class="btn btn-primary" onclick="addProject()">＋ 添加项目</button>
+    </div>
+  `;
+  main.innerHTML = html;
+}
+
+function editProject(id) {
+  const p = CURRENT_DATA.projects.find(x => x.id === id);
+  if (!p) return;
+  openModal(`
+    <div class="modal-header">
+      <div class="modal-title">编辑项目</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">项目标题</label>
+      <input class="form-input" id="edit_title" value="${p.title}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">项目描述</label>
+      <textarea class="form-textarea" id="edit_desc">${p.desc}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">标签</label>
+      <input class="form-input" id="edit_tag" value="${p.tag||''}">
+    </div>
+    <div style="text-align:right;margin-top:20px">
+      <button class="btn btn-primary" onclick="submitEditProject(${id})">保存</button>
+    </div>
+  `);
+}
+
+async function submitEditProject(id) {
+  const data = {
+    title: document.getElementById('edit_title').value,
+    desc: document.getElementById('edit_desc').value,
+    tag: document.getElementById('edit_tag').value,
+  };
+  const res = await api('/api/projects/' + id, { method: 'PUT', body: JSON.stringify(data) });
+  if (res.code === 200) {
+    const idx = CURRENT_DATA.projects.findIndex(p => p.id === id);
+    CURRENT_DATA.projects[idx] = { ...CURRENT_DATA.projects[idx], ...data };
+    closeModal(); renderProjects(document.getElementById('mainContent'));
+    toast('项目已更新');
+  } else { toast(res.msg, 'error'); }
+}
+
+async function deleteProject(id) {
+  if (!confirm('确定删除这个项目？')) return;
+  const res = await api('/api/projects/' + id, { method: 'DELETE' });
+  if (res.code === 200) {
+    CURRENT_DATA.projects = CURRENT_DATA.projects.filter(p => p.id !== id);
+    renderProjects(document.getElementById('mainContent'));
+    toast('项目已删除');
+  } else { toast(res.msg, 'error'); }
+}
+
+async function addProject() {
+  const data = {
+    title: document.getElementById('newProjTitle').value,
+    desc: document.getElementById('newProjDesc').value,
+    tag: document.getElementById('newProjTag').value,
+  };
+  if (!data.title) return toast('请输入项目标题', 'error');
+  const res = await api('/api/projects', { method: 'POST', body: JSON.stringify(data) });
+  if (res.code === 200) {
+    CURRENT_DATA.projects.push(res.data);
+    renderProjects(document.getElementById('mainContent'));
+    document.getElementById('newProjTitle').value = '';
+    document.getElementById('newProjDesc').value = '';
+    document.getElementById('newProjTag').value = '';
+    toast('项目已添加');
+  } else { toast(res.msg, 'error'); }
+}
+
+/* ---------- 生活碎片 ---------- */
+function renderLife(main) {
+  const items = CURRENT_DATA.life || [];
+  const icons = ['camera','music','book','lotus','coffee','plane','code','game','food','sport'];
+  let html = `
+    <div class="page-header">
+      <div class="page-title">生活碎片</div>
+      <div class="page-subtitle">主页底部展示的兴趣爱好</div>
+    </div>
+    <div class="glass section-card">
+      <div class="section-title">碎片列表</div>
+  `;
+  items.forEach((item, i) => {
+    html += `
+      <div class="list-item">
+        <div style="width:24px;color:var(--text-faint);font-size:12px;font-family:var(--mono)">${i+1}</div>
+        <div class="item-info">
+          <div class="item-name">${item.name}</div>
+          <div class="item-desc">图标: ${item.icon}</div>
+        </div>
+        <div class="item-actions">
+          <select class="form-select" style="width:120px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text)" onchange="updateLifeIcon(${i},this.value)">
+            ${icons.map(ic => `<option value="${ic}" ${item.icon===ic?'selected':''}>${ic}</option>`).join('')}
+          </select>
+          <button class="btn btn-sm btn-danger" onclick="removeLife(${i})">删除</button>
+        </div>
+      </div>
+    `;
+  });
+  html += `</div>`;
+  html += `
+    <div class="glass section-card">
+      <div class="section-title">新增碎片</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">名称</label>
+          <input class="form-input" id="newLifeName" placeholder="如：旅行">
+        </div>
+        <div class="form-group">
+          <label class="form-label">图标</label>
+          <select class="form-select" id="newLifeIcon">
+            ${icons.map(ic => `<option value="${ic}">${ic}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addLife()">＋ 添加</button>
+    </div>
+  `;
+  html += `<div style="text-align:right;margin-top:8px"><button class="btn btn-primary" onclick="saveLife()">💾 保存</button></div>`;
+  main.innerHTML = html;
+}
+
+function updateLifeIcon(i, icon) { CURRENT_DATA.life[i].icon = icon; }
+function removeLife(i) { CURRENT_DATA.life.splice(i, 1); renderLife(document.getElementById('mainContent')); }
+function addLife() {
+  const name = document.getElementById('newLifeName').value.trim();
+  const icon = document.getElementById('newLifeIcon').value;
+  if (!name) return toast('请输入名称', 'error');
+  CURRENT_DATA.life.push({ name, icon });
+  renderLife(document.getElementById('mainContent'));
+}
+async function saveLife() {
+  const res = await api('/api/life', { method: 'PUT', body: JSON.stringify(CURRENT_DATA.life) });
+  if (res.code === 200) toast('生活碎片已保存'); else toast(res.msg, 'error');
+}
+
+/* ---------- 社交链接 ---------- */
+function renderSocial(main) {
+  const s = CURRENT_DATA.social || {};
+  const platforms = [
+    { key: 'github', label: 'GitHub', url: s.github?.url || '' },
+    { key: 'email', label: '邮箱', url: s.email?.url || '' },
+    { key: 'wechat', label: '微信', url: s.wechat?.url || '' },
+    { key: 'instagram', label: 'Instagram', url: s.instagram?.url || '' },
+    { key: 'xiaohongshu', label: '小红书', url: s.xiaohongshu?.url || '' },
+  ];
+  let html = `
+    <div class="page-header">
+      <div class="page-title">社交链接</div>
+      <div class="page-subtitle">主页底部联系图标跳转地址</div>
+    </div>
+    <div class="glass section-card">
+      <div class="section-title">链接配置</div>
+  `;
+  platforms.forEach(p => {
+    html += `
+      <div class="form-group">
+        <label class="form-label">${p.label}</label>
+        <input class="form-input" id="soc_${p.key}" value="${p.url}" placeholder="https:// 或 #">
+      </div>
+    `;
+  });
+  html += `</div>`;
+  html += `<div style="text-align:right"><button class="btn btn-primary" onclick="saveSocial()">💾 保存链接</button></div>`;
+  main.innerHTML = html;
+}
+
+async function saveSocial() {
+  const social = {};
+  ['github','email','wechat','instagram','xiaohongshu'].forEach(key => {
+    const url = document.getElementById('soc_' + key).value.trim();
+    social[key] = { url: url || '#', icon: key === 'xiaohongshu' ? 'book' : key };
+  });
+  const res = await api('/api/social', { method: 'PUT', body: JSON.stringify(social) });
+  if (res.code === 200) { CURRENT_DATA.social = social; toast('社交链接已保存'); }
+  else { toast(res.msg, 'error'); }
+}
+
+/* ---------- 主题设置 ---------- */
+function renderTheme(main) {
+  const themes = [
+    { key: 'neon', name: '霓虹粉青', desc: '活力·赛博', c1: '#FF527C', c2: '#00FFFF' },
+    { key: 'crimson', name: '深红冰蓝', desc: '冷艳·高级', c1: '#D30121', c2: '#BFDEFF' },
+    { key: 'pinklime', name: '荧光粉绿', desc: '潮酷·撞色', c1: '#FF449E', c2: '#ACFE6C' },
+    { key: 'darkpurple', name: '紫黑极简', desc: '暗夜·神秘', c1: '#A855F7', c2: '#0B0C10' },
+    { key: 'rose', name: '玫瑰红', desc: '温柔·浪漫', c1: '#E72D48', c2: '#F1DDDF' },
+    { key: 'appletree', name: '苹果绿青', desc: '清新·自然', c1: '#73AE52', c2: '#3FBFD7' },
+  ];
+  const current = CURRENT_DATA.theme || 'neon';
+  let html = `
+    <div class="page-header">
+      <div class="page-title">主题设置</div>
+      <div class="page-subtitle">切换后主页背景色会同步变化</div>
+    </div>
+    <div class="glass section-card">
+      <div class="section-title">选择主题</div>
+      <div class="theme-grid">
+  `;
+  themes.forEach(t => {
+    html += `
+      <div class="theme-card ${t.key===current?'active':''}" onclick="selectTheme('${t.key}',this)" data-key="${t.key}">
+        <div class="theme-preview"><span style="background:${t.c1}"></span><span style="background:${t.c2}"></span></div>
+        <div class="name">${t.name}</div>
+        <div class="desc">${t.desc}</div>
+      </div>
+    `;
+  });
+  html += `</div></div>`;
+  html += `<div style="text-align:right;margin-top:8px"><button class="btn btn-primary" onclick="saveTheme()">💾 保存主题</button></div>`;
+  main.innerHTML = html;
+}
+
+let pendingTheme = CURRENT_DATA.theme || 'neon';
+function selectTheme(key, el) {
+  document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  pendingTheme = key;
+  // 实时预览
+  const themes = { neon:{c1:'#FF527C',c2:'#00FFFF',accent:'#ACFE6C'}, crimson:{c1:'#D30121',c2:'#BFDEFF',accent:'#6F90E0'}, pinklime:{c1:'#FF449E',c2:'#ACFE6C',accent:'#7FE085'}, darkpurple:{c1:'#A855F7',c2:'#0B0C10',accent:'#5B21B6'}, rose:{c1:'#E72D48',c2:'#F1DDDF',accent:'#FF6B81'}, appletree:{c1:'#73AE52',c2:'#3FBFD7',accent:'#5BC78A'} };
+  const t = themes[key];
+  if (t) {
+    document.documentElement.style.setProperty('--c1', t.c1);
+    document.documentElement.style.setProperty('--c2', t.c2);
+    document.documentElement.style.setProperty('--c-accent', t.accent);
+    document.getElementById('bgInk').style.background = `radial-gradient(ellipse 45% 55% at 20% 30%, ${t.c1} 0%, transparent 60%), radial-gradient(ellipse 40% 50% at 80% 70%, ${t.c2} 0%, transparent 55%), radial-gradient(ellipse 30% 35% at 60% 20%, ${t.accent} 0%, transparent 50%), radial-gradient(ellipse 60% 60% at 50% 50%, rgba(20,20,60,0.4) 0%, transparent 70%)`;
+  }
+}
+async function saveTheme() {
+  const res = await api('/api/theme', { method: 'PUT', body: JSON.stringify({ key: pendingTheme }) });
+  if (res.code === 200) { CURRENT_DATA.theme = pendingTheme; toast('主题已保存'); }
+  else { toast(res.msg, 'error'); }
+}
+
+/* ---------- 安全设置 ---------- */
+function renderSecurity(main) {
+  main.innerHTML = `
+    <div class="page-header">
+      <div class="page-title">安全设置</div>
+      <div class="page-subtitle">修改管理后台登录密码</div>
+    </div>
+    <div class="glass section-card">
+      <div class="section-title">修改密码</div>
+      <div class="form-group">
+        <label class="form-label">原密码</label>
+        <input class="form-input" type="password" id="oldPwd" placeholder="请输入当前密码">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">新密码</label>
+          <input class="form-input" type="password" id="newPwd" placeholder="至少6位">
+        </div>
+        <div class="form-group">
+          <label class="form-label">确认新密码</label>
+          <input class="form-input" type="password" id="newPwd2" placeholder="再次输入">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="changePassword()">🔒 修改密码</button>
+    </div>
+  `;
+}
+
+async function changePassword() {
+  const oldPwd = document.getElementById('oldPwd').value;
+  const newPwd = document.getElementById('newPwd').value;
+  const newPwd2 = document.getElementById('newPwd2').value;
+  if (!oldPwd || !newPwd) return toast('请填写完整', 'error');
+  if (newPwd !== newPwd2) return toast('两次密码不一致', 'error');
+  if (newPwd.length < 6) return toast('密码至少6位', 'error');
+  const res = await api('/api/auth/change-password', { method: 'POST', body: JSON.stringify({ oldPwd, newPwd }) });
+  if (res.code === 200) {
+    toast('密码修改成功，请重新登录');
+    setTimeout(() => doLogout(), 1500);
+  } else { toast(res.msg, 'error'); }
+}
+
+/* ---------- 数据管理 ---------- */
+function renderData(main) {
+  main.innerHTML = `
+    <div class="page-header">
+      <div class="page-title">数据管理</div>
+      <div class="page-subtitle">导入 / 导出全部数据，方便备份和迁移</div>
+    </div>
+    <div class="glass section-card">
+      <div class="section-title">导出数据</div>
+      <p style="font-size:13px;color:var(--text-soft);margin-bottom:16px">将所有配置（资料、技能、项目、主题等）导出为 JSON 文件备份。</p>
+      <button class="btn btn-primary" onclick="exportData()">⬇ 导出 JSON</button>
+    </div>
+    <div class="glass section-card">
+      <div class="section-title">导入数据</div>
+      <p style="font-size:13px;color:var(--text-soft);margin-bottom:16px">从备份的 JSON 文件恢复全部数据（会覆盖当前配置）。</p>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+      <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">⬆ 选择文件</button>
+    </div>
+    <div class="glass section-card" style="border-color:rgba(255,59,48,0.2)">
+      <div class="section-title" style="color:#ff6b6b">危险操作</div>
+      <p style="font-size:13px;color:var(--text-soft);margin-bottom:16px">重置所有数据为默认值，不可恢复。</p>
+      <button class="btn btn-danger" onclick="resetAll()">⚠ 重置全部数据</button>
+    </div>
+  `;
+}
+
+function exportData() {
+  window.location.href = API_BASE + '/api/export';
+  toast('开始下载...', 'info');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      const res = await api('/api/import', { method: 'POST', body: JSON.stringify(data) });
+      if (res.code === 200) { toast('数据导入成功，正在刷新...'); setTimeout(() => location.reload(), 1000); }
+      else { toast(res.msg, 'error'); }
+    } catch (err) { toast('文件格式错误：' + err.message, 'error'); }
+  };
+  reader.readAsText(file);
+}
+
+async function resetAll() {
+  if (!confirm('确定要重置所有数据吗？此操作不可恢复！')) return;
+  if (!confirm('再次确认：所有数据将丢失，恢复为默认值！')) return;
+  // 清除 data.json 让服务端重新生成默认
+  CURRENT_DATA = null;
+  // 直接写入空对象触发服务端重建
+  const defaultData = { profile:{}, skills:[], projects:[], life:[], social:{}, theme:'neon' };
+  const res = await api('/api/import', { method: 'POST', body: JSON.stringify(defaultData) });
+  if (res.code === 200) { toast('已重置，刷新中...'); setTimeout(() => location.reload(), 1000); }
+}
+
+/* ============================================================
+   🪟 模态框
+   ============================================================ */
+function openModal(html) {
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+/* ============================================================
+   🚀 初始化
+   ============================================================ */
+if (TOKEN) {
+  // 有 token 尝试直接进
+  api('/api/profile').then(res => {
+    if (res.code === 200) {
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('appMain').style.display = '';
+      loadAllData();
+    }
+  }).catch(() => { /* token 无效，显示登录页 */ });
+}
+</script>
+</body>
+</html>
