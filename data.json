@@ -15,19 +15,19 @@
   "skills": [
     {
       "name": "Photoshop",
-      "pct": 88
+      "pct": 0
     },
     {
-      "name": "Figma",
+      "name": "Delta Force",
       "pct": 85
     },
     {
-      "name": "æå½±",
-      "pct": 80
+      "name": "Python",
+      "pct": 2
     },
     {
-      "name": "è§é¢åªè¾",
-      "pct": 70
+      "name": "Java",
+      "pct": 1
     }
   ],
   "projects": [
