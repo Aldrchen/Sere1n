@@ -1,23 +1,35 @@
 {
   "profile": {
-    "name": "你的名字",
-    "title": "// 你的方向",
-    "bio": "简单介绍自己\n生活化的描述",
-    "avatarText": "YN",
-    "avatarUrl": "",
+    "name": "Sere1n",
+    "title": "很空等开学",
+    "bio": "春风十里，不度此寒间。",
     "city": "厦门",
-    "job": "设计师",
-    "hobby": "摄影 · 旅行",
+    "job": "大学生",
+    "hobby": "篮球,三角洲",
+    "avatarText": "Sere1n",
+    "avatarUrl": "",
     "status": "在线",
     "heroGreeting": "— 你好，欢迎 —",
-    "heroName": "你的名字",
-    "heroDesc": "写一段关于自己的话，不需要太正式，就像和朋友聊天一样。"
+    "heroName": "Sere1n",
+    "heroDesc": "很高兴你在这里。不如，从这里开始认识我？"
   },
   "skills": [
-    { "name": "Photoshop", "pct": 88 },
-    { "name": "Figma", "pct": 85 },
-    { "name": "摄影", "pct": 80 },
-    { "name": "视频剪辑", "pct": 70 }
+    {
+      "name": "Photoshop",
+      "pct": 88
+    },
+    {
+      "name": "Figma",
+      "pct": 85
+    },
+    {
+      "name": "摄影",
+      "pct": 80
+    },
+    {
+      "name": "视频剪辑",
+      "pct": 70
+    }
   ],
   "projects": [
     {
@@ -34,10 +46,22 @@
     }
   ],
   "life": [
-    { "name": "摄影", "icon": "camera" },
-    { "name": "音乐", "icon": "music" },
-    { "name": "阅读", "icon": "book" },
-    { "name": "冥想", "icon": "heart" }
+    {
+      "name": "摄影",
+      "icon": "camera"
+    },
+    {
+      "name": "音乐",
+      "icon": "music"
+    },
+    {
+      "name": "阅读",
+      "icon": "book"
+    },
+    {
+      "name": "冥想",
+      "icon": "heart"
+    }
   ],
   "social": {
     "github": "https://github.com",
