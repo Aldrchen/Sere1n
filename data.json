@@ -16,33 +16,27 @@
   "skills": [
     {
       "name": "Photoshop",
-      "pct": 88
+      "pct": 20
     },
     {
-      "name": "Figma",
+      "name": "Delta Force",
       "pct": 85
     },
     {
       "name": "摄影",
-      "pct": 80
+      "pct": 20
     },
     {
       "name": "视频剪辑",
-      "pct": 70
+      "pct": 10
     }
   ],
   "projects": [
     {
-      "title": "项目一",
-      "desc": "简单描述这个项目做了什么，一两句话就够了。",
-      "tag": "标签",
+      "title": "马上就有了",
+      "desc": "一定会有的",
+      "tag": "",
       "icon": "chart"
-    },
-    {
-      "title": "项目二",
-      "desc": "简单描述这个项目做了什么，一两句话就够了。",
-      "tag": "标签",
-      "icon": "camera"
     }
   ],
   "life": [
