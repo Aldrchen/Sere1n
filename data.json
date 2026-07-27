@@ -1,0 +1,67 @@
+{
+  "profile": {
+    "name": "你的名字",
+    "title": "// 你的方向",
+    "bio": "简单介绍自己\n生活化的描述",
+    "avatarText": "YN",
+    "avatarUrl": "",
+    "city": "厦门",
+    "job": "设计师",
+    "hobby": "摄影 · 旅行",
+    "status": "在线",
+    "heroGreeting": "— 你好，欢迎 —",
+    "heroName": "你的名字",
+    "heroDesc": "写一段关于自己的话，不需要太正式，就像和朋友聊天一样。"
+  },
+  "skills": [
+    { "name": "Photoshop", "pct": 88 },
+    { "name": "Figma", "pct": 85 },
+    { "name": "摄影", "pct": 80 },
+    { "name": "视频剪辑", "pct": 70 }
+  ],
+  "projects": [
+    {
+      "title": "项目一",
+      "desc": "简单描述这个项目做了什么，一两句话就够了。",
+      "tag": "标签",
+      "icon": "chart"
+    },
+    {
+      "title": "项目二",
+      "desc": "简单描述这个项目做了什么，一两句话就够了。",
+      "tag": "标签",
+      "icon": "camera"
+    }
+  ],
+  "life": [
+    { "name": "摄影", "icon": "camera" },
+    { "name": "音乐", "icon": "music" },
+    { "name": "阅读", "icon": "book" },
+    { "name": "冥想", "icon": "heart" }
+  ],
+  "social": {
+    "github": "https://github.com",
+    "email": "",
+    "wechat": "#",
+    "instagram": "",
+    "xiaohongshu": ""
+  },
+  "theme": "blue",
+  "bg": {
+    "url": "",
+    "blur": 20,
+    "opacity": 0.55,
+    "scale": 1.1
+  },
+  "custom": {
+    "css": "",
+    "html": ""
+  },
+  "modules": {
+    "skills": true,
+    "projects": true,
+    "life": true,
+    "social": true,
+    "about": true
+  }
+}

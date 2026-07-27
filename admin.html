@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Sere1n · 管理后台</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: auto; overflow-y: auto; overflow-x: hidden; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+  background: #0a0a18; color: #e2e8f0;
+  min-height: 100vh; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+a { color: inherit; text-decoration: none; }
+
+/* 布局 */
+.admin-layout { display: flex; min-height: 100vh; }
+
+/* 侧边栏 */
+.sidebar {
+  width: 240px; flex-shrink: 0;
+  background: rgba(12,14,30,0.95);
+  border-right: 1px solid rgba(255,255,255,0.06);
+  padding: 24px 0;
+  position: sticky; top: 0; height: 100vh;
+  overflow-y: auto;
+}
+.sidebar-logo {
+  text-align: center; margin-bottom: 32px; padding: 0 16px;
+}
+.sidebar-logo h1 {
+  font-size: 20px; font-weight: 800;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.sidebar-logo p { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+.menu-group { margin-bottom: 24px; }
+.menu-group-title {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
+  color: #475569; padding: 0 24px; margin-bottom: 8px;
+}
+.menu-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 24px; cursor: pointer;
+  font-size: 14px; color: #94a3b8;
+  transition: all 0.2s; border-left: 3px solid transparent;
+}
+.menu-item:hover { background: rgba(59,130,246,0.06); color: #cbd5e1; }
+.menu-item.active { background: rgba(59,130,246,0.1); color: #60a5fa; border-left-color: #3b82f6; }
+.menu-item i { width: 20px; text-align: center; font-size: 16px; }
+
+/* 主内容 */
+.main-content { flex: 1; padding: 32px; max-width: 900px; margin: 0 auto; }
+
+/* 页面标题 */
+.page-header { margin-bottom: 28px; }
+.page-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+.page-desc { font-size: 14px; color: #64748b; }
+
+/* 卡片 */
+.card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px; padding: 24px;
+  margin-bottom: 20px;
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.card-title {
+  font-size: 16px; font-weight: 600;
+  display: flex; align-items: center; gap: 10px;
+}
+.card-title i { color: #60a5fa; }
+
+/* 表单 */
+.form-row { margin-bottom: 16px; }
+.form-label {
+  display: block; font-size: 13px; color: #94a3b8;
+  margin-bottom: 6px; font-weight: 500;
+}
+.form-input, .form-textarea, .form-select {
+  width: 100%; padding: 12px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; color: #e2e8f0;
+  font-size: 14px; font-family: inherit;
+  transition: border-color 0.2s;
+}
+.form-input:focus, .form-textarea:focus {
+  outline: none; border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+.form-textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+/* 按钮 */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 24px; border-radius: 10px;
+  border: none; cursor: pointer; font-size: 14px;
+  font-weight: 500; font-family: inherit;
+  transition: all 0.25s;
+}
+.btn-primary { background: #3b82f6; color: white; }
+.btn-primary:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+.btn-secondary { background: rgba(255,255,255,0.05); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.08); }
+.btn-secondary:hover { background: rgba(255,255,255,0.08); }
+.btn-danger { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+.btn-danger:hover { background: rgba(239,68,68,0.2); }
+.btn-success { background: #10b981; color: white; }
+.btn-success:hover { background: #059669; }
+
+/* 上传区 */
+.upload-zone {
+  border: 2px dashed rgba(255,255,255,0.1);
+  border-radius: 12px; padding: 40px 24px;
+  text-align: center; cursor: pointer;
+  transition: all 0.3s; margin-bottom: 16px;
+}
+.upload-zone:hover { border-color: #3b82f6; background: rgba(59,130,246,0.04); }
+.upload-zone i { font-size: 42px; color: #60a5fa; margin-bottom: 12px; }
+.upload-zone p { color: #94a3b8; font-size: 14px; }
+.upload-zone .hint { font-size: 12px; color: #475569; margin-top: 6px; }
+
+/* 滑块 */
+.slider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.slider-row label { font-size: 13px; color: #94a3b8; min-width: 80px; }
+.slider-row input[type=range] { flex: 1; accent-color: #3b82f6; }
+.slider-val { font-size: 13px; color: #e2e8f0; min-width: 50px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* 开关 */
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-row span { font-size: 14px; }
+.toggle {
+  position: relative; width: 48px; height: 26px;
+  background: rgba(255,255,255,0.1); border-radius: 13px;
+  cursor: pointer; transition: background 0.3s; flex-shrink: 0;
+}
+.toggle::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; background: white; border-radius: 50%;
+  transition: transform 0.3s;
+}
+.toggle.on { background: #3b82f6; }
+.toggle.on::after { transform: translateX(22px); }
+
+/* 主题色 */
+.theme-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px,1fr)); gap: 12px; }
+.theme-card {
+  padding: 14px; border-radius: 12px; cursor: pointer;
+  border: 2px solid transparent; transition: all 0.25s;
+  text-align: center;
+}
+.theme-card:hover { transform: translateY(-2px); }
+.theme-card.active { border-color: #fff; box-shadow: 0 0 20px rgba(255,255,255,0.1); }
+.theme-preview {
+  width: 100%; height: 40px; border-radius: 8px; margin-bottom: 8px;
+}
+.theme-card-name { font-size: 12px; font-weight: 600; }
+.theme-card-desc { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+/* 技能列表 */
+.skill-row {
+  display: flex; gap: 10px; align-items: center;
+  margin-bottom: 12px;
+}
+.skill-row .form-input { flex: 1; }
+.skill-row .pct-input { width: 80px; flex-shrink: 0; }
+
+/* 提示 */
+.toast {
+  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+  background: rgba(16,185,129,0.95); color: white;
+  padding: 12px 28px; border-radius: 10px; font-size: 14px;
+  z-index: 99999; opacity: 0; transition: opacity 0.3s;
+  pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.toast.show { opacity: 1; }
+.toast.error { background: rgba(239,68,68,0.95); }
+
+/* Tab内容 */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* 数据管理 */
+.mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.mode-card {
+  padding: 20px; border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.06);
+  cursor: pointer; transition: all 0.25s;
+}
+.mode-card:hover { border-color: rgba(59,130,246,0.3); }
+.mode-card.active { border-color: #3b82f6; background: rgba(59,130,246,0.05); }
+.mode-card h4 { font-size: 15px; margin-bottom: 6px; }
+.mode-card p { font-size: 12px; color: #64748b; line-height: 1.5; }
+
+/* Token区 */
+.token-input-row { display: flex; gap: 10px; }
+.token-input-row .form-input { flex: 1; }
+
+/* 移动端 */
+@media (max-width: 768px) {
+  .admin-layout { flex-direction: column; }
+  .sidebar { width: 100%; height: auto; position: static; display: flex; flex-wrap: wrap; padding: 12px; gap: 4px; }
+  .sidebar-logo { width: 100%; margin-bottom: 12px; }
+  .menu-group { display: none; }
+  .menu-item { padding: 10px 14px; font-size: 13px; border-left: none; border-radius: 8px; }
+  .menu-item.active { border-left: none; background: rgba(59,130,246,0.15); }
+  .main-content { padding: 16px; }
+  .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
+  .mode-cards { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="admin-layout">
+  <!-- 侧边栏 -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>Sere1n</h1>
+      <p>管理后台 v2.0</p>
+    </div>
+
+    <div class="menu-group">
+      <div class="menu-group-title">外观</div>
+      <div class="menu-item active" data-tab="background"><i class="fas fa-image"></i> 背景图</div>
+      <div class="menu-item" data-tab="theme"><i class="fas fa-palette"></i> 主题色</div>
+      <div class="menu-item" data-tab="modules"><i class="fas fa-th-large"></i> 模块开关</div>
+      <div class="menu-item" data-tab="custom"><i class="fas fa-code"></i> 自定义代码</div>
+    </div>
+
+    <div class="menu-group">
+      <div class="menu-group-title">内容</div>
+      <div class="menu-item" data-tab="profile"><i class="fas fa-user"></i> 个人资料</div>
+      <div class="menu-item" data-tab="skills"><i class="fas fa-star"></i> 技能管理</div>
+      <div class="menu-item" data-tab="projects"><i class="fas fa-folder"></i> 项目管理</div>
+      <div class="menu-item" data-tab="life"><i class="fas fa-leaf"></i> 生活碎片</div>
+      <div class="menu-item" data-tab="social"><i class="fas fa-link"></i> 社交链接</div>
+    </div>
+
+    <div class="menu-group">
+      <div class="menu-group-title">系统</div>
+      <div class="menu-item" data-tab="data"><i class="fas fa-database"></i> 数据管理</div>
+      <div class="menu-item" data-tab="help"><i class="fas fa-question-circle"></i> 使用帮助</div>
+    </div>
+  </aside>
+
+  <!-- 主内容 -->
+  <div class="main-content">
+    <div class="page-header">
+      <h1 class="page-title" id="pageTitle">背景图设置</h1>
+      <p class="page-desc" id="pageDesc">上传自定义背景图片，调整模糊度和透明度</p>
+    </div>
+
+    <!-- ===== 背景图 ===== -->
+    <div class="tab-panel active" id="tab-background">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-cloud-upload-alt"></i> 上传背景图</div>
+        </div>
+        <div class="upload-zone" id="bgDropZone">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <p><strong>点击上传</strong> 或拖拽图片到此处</p>
+          <p class="hint">支持 JPG / PNG / WEBP / GIF，最大 5MB</p>
+          <input type="file" id="bgFileInput" accept="image/*" style="display:none;">
+        </div>
+        <div class="form-row">
+          <label class="form-label">或使用网络图片 URL</label>
+          <input class="form-input" type="text" id="bgUrlInput" placeholder="https://example.com/your-image.jpg">
+        </div>
+        <div style="margin-top:20px;">
+          <div class="slider-row">
+            <label>模糊度</label>
+            <input type="range" id="bgBlur" min="0" max="60" value="20" step="1">
+            <span class="slider-val" id="bgBlurVal">20px</span>
+          </div>
+          <div class="slider-row">
+            <label>透明度</label>
+            <input type="range" id="bgOpacity" min="0" max="1" value="0.55" step="0.05">
+            <span class="slider-val" id="bgOpacityVal">0.55</span>
+          </div>
+          <div class="slider-row">
+            <label>缩放</label>
+            <input type="range" id="bgScale" min="1" max="2" value="1.1" step="0.05">
+            <span class="slider-val" id="bgScaleVal">1.10x</span>
+          </div>
+        </div>
+        <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="saveBackground()"><i class="fas fa-save"></i> 保存背景设置</button>
+          <button class="btn btn-secondary" onclick="clearBackground()"><i class="fas fa-trash"></i> 清除背景</button>
+          <button class="btn btn-secondary" onclick="previewBackground()"><i class="fas fa-eye"></i> 预览效果</button>
+        </div>
+      </div>
+
+      <!-- 预设背景 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-images"></i> 预设背景</div>
+          <span style="font-size:12px; color:#64748b;">点击快速应用</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px;">
+          <div class="preset-bg" data-bg="gradient1" style="height:80px; border-radius:10px; cursor:pointer; background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460); border:2px solid transparent;"></div>
+          <div class="preset-bg" data-bg="gradient2" style="height:80px; border-radius:10px; cursor:pointer; background:linear-gradient(135deg,#0f0c29,#302b63,#24243e); border:2px solid transparent;"></div>
+          <div class="preset-bg" data-bg="gradient3" style="height:80px; border-radius:10px; cursor:pointer; background:linear-gradient(135deg,#000428,#004e92); border:2px solid transparent;"></div>
+          <div class="preset-bg" data-bg="gradient4" style="height:80px; border-radius:10px; cursor:pointer; background:linear-gradient(135deg,#232526,#414345); border:2px solid transparent;"></div>
+          <div class="preset-bg" data-bg="gradient5" style="height:80px; border-radius:10px; cursor:pointer; background:linear-gradient(135deg,#1f1c2c,#928dab); border:2px solid transparent;"></div>
+          <div class="preset-bg" data-bg="gradient6" style="height:80px; border-radius:10px; cursor:pointer; background:linear-gradient(135deg,#0f2027,#203a43,#2c5364); border:2px solid transparent;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 主题色 ===== -->
+    <div class="tab-panel" id="tab-theme">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-palette"></i> 选择主题色</div>
+        </div>
+        <div class="theme-grid" id="themeGrid"></div>
+      </div>
+    </div>
+
+    <!-- ===== 模块开关 ===== -->
+    <div class="tab-panel" id="tab-modules">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-th-large"></i> 显示/隐藏板块</div>
+          <span style="font-size:12px; color:#64748b;">关闭后主页不再显示该板块</span>
+        </div>
+        <div id="moduleToggles"></div>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="saveModules()"><i class="fas fa-save"></i> 保存模块设置</button>
+      </div>
+    </div>
+
+    <!-- ===== 自定义代码 ===== -->
+    <div class="tab-panel" id="tab-custom">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-code"></i> 自定义 CSS</div>
+          <span style="font-size:12px; color:#64748b;">写在这里的CSS会直接生效</span>
+        </div>
+        <textarea class="form-textarea" id="customCssInput" rows="10" placeholder="/* 示例：修改名字颜色 */
+.profile-name { color: #ff6b6b; }
+
+/* 修改卡片圆角 */
+.glass { border-radius: 20px; }"></textarea>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-plus-square"></i> 自定义 HTML</div>
+          <span style="font-size:12px; color:#64748b;">会在主页底部追加显示</span>
+        </div>
+        <textarea class="form-textarea" id="customHtmlInput" rows="8" placeholder="<!-- 示例：新增一个公告板块 -->
+<div class='glass' style='margin-top:24px;'>
+  <h3 style='color:#fbbf24;'>📢 最新动态</h3>
+  <p>这里写你想展示的额外内容...</p>
+</div>"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveCustom()"><i class="fas fa-save"></i> 保存自定义代码</button>
+    </div>
+
+    <!-- ===== 个人资料 ===== -->
+    <div class="tab-panel" id="tab-profile">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-user"></i> 基本信息</div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label class="form-label">姓名</label>
+            <input class="form-input" id="p_name" placeholder="你的名字">
+          </div>
+          <div class="form-row">
+            <label class="form-label">方向/标题</label>
+            <input class="form-input" id="p_title" placeholder="// 你的方向">
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">个人简介（支持换行）</label>
+          <textarea class="form-textarea" id="p_bio" rows="3" placeholder="简单介绍自己&#10;生活化的描述"></textarea>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label class="form-label">城市</label>
+            <input class="form-input" id="p_city" placeholder="厦门">
+          </div>
+          <div class="form-row">
+            <label class="form-label">职业</label>
+            <input class="form-input" id="p_job" placeholder="设计师">
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">爱好（用 · 分隔）</label>
+          <input class="form-input" id="p_hobby" placeholder="摄影 · 旅行">
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label class="form-label">头像文字</label>
+            <input class="form-input" id="p_avatarText" placeholder="YN">
+          </div>
+          <div class="form-row">
+            <label class="form-label">头像图片URL（留空用文字）</label>
+            <input class="form-input" id="p_avatarUrl" placeholder="https://...">
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">状态</label>
+          <input class="form-input" id="p_status" placeholder="在线">
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-heart"></i> Hero 欢迎区</div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">问候语</label>
+          <input class="form-input" id="p_greeting" placeholder="— 你好，欢迎 —">
+        </div>
+        <div class="form-row">
+          <label class="form-label">高亮名字</label>
+          <input class="form-input" id="p_heroName" placeholder="你的名字">
+        </div>
+        <div class="form-row">
+          <label class="form-label">描述文字</label>
+          <textarea class="form-textarea" id="p_heroDesc" rows="2" placeholder="写一段关于自己的话..."></textarea>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveProfile()"><i class="fas fa-save"></i> 保存个人资料</button>
+    </div>
+
+    <!-- ===== 技能管理 ===== -->
+    <div class="tab-panel" id="tab-skills">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-star"></i> 技能列表</div>
+          <button class="btn btn-secondary" onclick="addSkill()"><i class="fas fa-plus"></i> 新增技能</button>
+        </div>
+        <div id="skillsEditor"></div>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="saveSkills()"><i class="fas fa-save"></i> 保存技能</button>
+      </div>
+    </div>
+
+    <!-- ===== 项目管理 ===== -->
+    <div class="tab-panel" id="tab-projects">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-folder"></i> 项目列表</div>
+          <button class="btn btn-secondary" onclick="addProject()"><i class="fas fa-plus"></i> 新增项目</button>
+        </div>
+        <div id="projectsEditor"></div>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="saveProjects()"><i class="fas fa-save"></i> 保存项目</button>
+      </div>
+    </div>
+
+    <!-- ===== 生活碎片 ===== -->
+    <div class="tab-panel" id="tab-life">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-leaf"></i> 生活碎片</div>
+          <button class="btn btn-secondary" onclick="addLife()"><i class="fas fa-plus"></i> 新增</button>
+        </div>
+        <div id="lifeEditor"></div>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="saveLife()"><i class="fas fa-save"></i> 保存</button>
+      </div>
+    </div>
+
+    <!-- ===== 社交链接 ===== -->
+    <div class="tab-panel" id="tab-social">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-link"></i> 社交链接</div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">GitHub</label>
+          <input class="form-input" id="s_github" placeholder="https://github.com/你的用户名">
+        </div>
+        <div class="form-row">
+          <label class="form-label">邮箱</label>
+          <input class="form-input" id="s_email" placeholder="your@email.com">
+        </div>
+        <div class="form-row">
+          <label class="form-label">微信（链接或微信号）</label>
+          <input class="form-input" id="s_wechat" placeholder="wechat-id 或 #">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Instagram</label>
+          <input class="form-input" id="s_instagram" placeholder="https://instagram.com/你的用户名">
+        </div>
+        <div class="form-row">
+          <label class="form-label">小红书</label>
+          <input class="form-input" id="s_xiaohongshu" placeholder="https://xiaohongshu.com/你的主页">
+        </div>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="saveSocial()"><i class="fas fa-save"></i> 保存社交链接</button>
+      </div>
+    </div>
+
+    <!-- ===== 数据管理 ===== -->
+    <div class="tab-panel" id="tab-data">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-database"></i> 存储模式</div>
+        </div>
+        <div class="mode-cards">
+          <div class="mode-card" id="modeRemote" onclick="setMode('remote')">
+            <h4>🌐 远程模式（推荐）</h4>
+            <p>通过 GitHub Token 直接修改仓库里的 data.json，全设备同步</p>
+          </div>
+          <div class="mode-card" id="modeLocal" onclick="setMode('local')">
+            <h4>💾 本地模式</h4>
+            <p>所有数据存在浏览器本地，不需要 Token，刷新不丢但换设备要重新配置</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-key"></i> GitHub Token</div>
+          <span style="font-size:12px; color:#64748b;">用于远程模式写入数据</span>
+        </div>
+        <div class="token-input-row">
+          <input class="form-input" type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+          <button class="btn btn-primary" onclick="saveToken()">保存</button>
+        </div>
+        <p style="font-size:12px; color:#475569; margin-top:10px; line-height:1.6;">
+          <i class="fas fa-info-circle"></i> Token 需要 <code>repo</code> 权限。<br>
+          获取路径：GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-download"></i> 导入 / 导出</div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
+          <button class="btn btn-secondary" onclick="exportData()"><i class="fas fa-download"></i> 导出 JSON</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()"><i class="fas fa-upload"></i> 导入 JSON</button>
+          <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
+        </div>
+        <button class="btn btn-danger" onclick="resetAll()"><i class="fas fa-undo"></i> 恢复默认数据</button>
+      </div>
+    </div>
+
+    <!-- ===== 使用帮助 ===== -->
+    <div class="tab-panel" id="tab-help">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-question-circle"></i> 快速上手</div>
+        </div>
+        <div style="line-height:2; font-size:14px; color:#cbd5e1;">
+          <h4 style="color:#f1f5f9; margin:16px 0 8px;">🖼️ 怎么换背景图？</h4>
+          <p>1. 点左侧「背景图」→ 点上传区域选图片（自动转base64，无需图床）<br>
+          2. 或粘贴网络图片URL到输入框<br>
+          3. 调整模糊度和透明度滑块<br>
+          4. 点「保存背景设置」→ 打开主页刷新即可看到</p>
+
+          <h4 style="color:#f1f5f9; margin:16px 0 8px;">🎨 怎么换主题色？</h4>
+          <p>点左侧「主题色」→ 点击你喜欢的配色卡片 → 自动保存</p>
+
+          <h4 style="color:#f1f5f9; margin:16px 0 8px;">📝 怎么改文字内容？</h4>
+          <p>左侧「个人资料」「技能管理」「项目管理」等 → 修改后点对应保存按钮</p>
+
+          <h4 style="color:#f1f5f9; margin:16px 0 8px;">🔑 Token 怎么获取？</h4>
+          <p>1. 登录 GitHub → 右上角头像 → Settings<br>
+          2. 左侧最底部 → Developer settings → Personal access tokens → Tokens (classic)<br>
+          3. Generate new token → Note 填"Sere1n" → Expiration 选"No expiration"<br>
+          4. 勾选 <code>repo</code> → Generate token<br>
+          5. 复制 <code>ghp_</code> 开头的字符串 → 回到这里粘贴保存</p>
+
+          <h4 style="color:#f1f5f9; margin:16px 0 8px;">💡 不想用 Token 怎么办？</h4>
+          <p>在「数据管理」里点「本地模式」→ 所有修改存在浏览器里<br>
+          缺点：换浏览器/清缓存数据会丢失，需要重新配置</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast 提示 -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   管理后台 JS
+   ============================================================ */
+const SITE = { basePath: '/Sere1n', dataFile: 'data.json' };
+function sitePath(p) {
+  if (!SITE.basePath || SITE.basePath === '/') return p;
+  if (p.startsWith('http') || p.startsWith('//') || p.startsWith(SITE.basePath)) return p;
+  return SITE.basePath.replace(/\/$/, '') + (p.startsWith('/') ? p : '/' + p);
+}
+function dataUrl() { return sitePath('/' + SITE.dataFile); }
+
+/* 默认数据 */
+function getDefaultData() {
+  return {
+    profile: { name:'你的名字', title:'// 你的方向', bio:'简单介绍自己\n生活化的描述', city:'厦门', job:'设计师', hobby:'摄影 · 旅行', status:'在线', avatarText:'YN', avatarUrl:'', heroGreeting:'— 你好，欢迎 —', heroName:'你的名字', heroDesc:'写一段关于自己的话，不需要太正式。' },
+    skills: [ {name:'Photoshop',pct:88},{name:'Figma',pct:85},{name:'摄影',pct:80},{name:'视频剪辑',pct:70} ],
+    projects: [ {title:'项目一',desc:'简单描述这个项目做了什么。',tag:'标签',icon:'chart'}, {title:'项目二',desc:'简单描述这个项目做了什么。',tag:'标签',icon:'camera'} ],
+    life: [ {name:'摄影',icon:'camera'},{name:'音乐',icon:'music'},{name:'阅读',icon:'book'},{name:'冥想',icon:'heart'} ],
+    social: { github:'https://github.com', email:'', wechat:'#', instagram:'', xiaohongshu:'' },
+    theme: 'blue',
+    bg: { url:'', blur:20, opacity:0.55, scale:1.1 },
+    custom: { css:'', html:'' },
+    modules: { skills:true, projects:true, life:true, social:true, about:true }
+  };
+}
+
+/* 数据存储 */
+let currentData = {};
+
+async function loadData() {
+  try {
+    const cached = localStorage.getItem('serein_data');
+    if (cached) currentData = JSON.parse(cached);
+  } catch(e) {}
+  try {
+    const res = await fetch(dataUrl() + '?t=' + Date.now());
+    if (res.ok) {
+      currentData = await res.json();
+      localStorage.setItem('serein_data', JSON.stringify(currentData));
+    }
+  } catch(e) {
+    if (!currentData || Object.keys(currentData).length === 0) {
+      currentData = getDefaultData();
+    }
+  }
+  fillAllForms();
+}
+
+/* Toast 提示 */
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 2500);
+}
+
+/* Tab 切换 */
+const tabTitles = {
+  background: ['背景图设置', '上传自定义背景图片，调整模糊度和透明度'],
+  theme: ['主题色', '选择一套你喜欢的配色方案'],
+  modules: ['模块开关', '控制主页哪些板块显示/隐藏'],
+  custom: ['自定义代码', '写CSS改样式，写HTML加内容'],
+  profile: ['个人资料', '修改姓名、方向、城市、爱好等基本信息'],
+  skills: ['技能管理', '增删改你的技能项和百分比'],
+  projects: ['项目管理', '管理主页展示的项目卡片'],
+  life: ['生活碎片', '管理兴趣爱好标签'],
+  social: ['社交链接', '修改 GitHub / 邮箱 / 微信等链接'],
+  data: ['数据管理', '切换存储模式、导入导出、Token配置'],
+  help: ['使用帮助', '常见问题解答'],
+};
+document.querySelectorAll('.menu-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    const tab = item.dataset.tab;
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById('tab-' + tab);
+    if (panel) panel.classList.add('active');
+    if (tabTitles[tab]) {
+      document.getElementById('pageTitle').textContent = tabTitles[tab][0];
+      document.getElementById('pageDesc').textContent = tabTitles[tab][1];
+    }
+  });
+});
+
+/* ============================================================
+   背景图管理
+   ============================================================ */
+const bgDropZone = document.getElementById('bgDropZone');
+const bgFileInput = document.getElementById('bgFileInput');
+
+bgDropZone.addEventListener('click', () => bgFileInput.click());
+bgDropZone.addEventListener('dragover', e => { e.preventDefault(); bgDropZone.style.borderColor = '#3b82f6'; });
+bgDropZone.addEventListener('dragleave', () => { bgDropZone.style.borderColor = ''; });
+bgDropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  bgDropZone.style.borderColor = '';
+  const file = e.dataTransfer.files[0];
+  if (file) processBgFile(file);
+});
+bgFileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) processBgFile(file);
+});
+
+function processBgFile(file) {
+  if (!file.type.startsWith('image/')) { showToast('请选择图片文件', true); return; }
+  if (file.size > 5 * 1024 * 1024) { showToast('图片不能超过5MB', true); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('bgUrlInput').value = e.target.result;
+    showToast('图片已加载，记得点保存~');
+  };
+  reader.readAsDataURL(file);
+}
+
+/* 滑块实时显示 */
+document.getElementById('bgBlur').addEventListener('input', e => document.getElementById('bgBlurVal').textContent = e.target.value + 'px');
+document.getElementById('bgOpacity').addEventListener('input', e => document.getElementById('bgOpacityVal').textContent = parseFloat(e.target.value).toFixed(2));
+document.getElementById('bgScale').addEventListener('input', e => document.getElementById('bgScaleVal').textContent = parseFloat(e.target.value).toFixed(2) + 'x');
+
+/* 预设背景 */
+document.querySelectorAll('.preset-bg').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.preset-bg').forEach(p => p.style.borderColor = 'transparent');
+    el.style.borderColor = '#3b82f6';
+    // 用 SVG 内联方式生成渐变背景
+    const bg = el.style.background;
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'><rect width='800' height='600' fill='${bg.match(/#[0-9a-fA-F]{6}/g)[0]}'/><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>${bg.match(/#[0-9a-fA-F]{6}/g).slice(1).map((c,i)=>`<stop offset='${(i+1)/(bg.match(/#[0-9a-fA-F]{6}/g).length)}' stop-color='${c}'/>`).join('')}</linearGradient></defs><rect width='800' height='600' fill='url(#g)'/></svg>`;
+    document.getElementById('bgUrlInput').value = 'data:image/svg+xml;base64,' + btoa(svg);
+  });
+});
+
+function saveBackground() {
+  currentData.bg = {
+    url: document.getElementById('bgUrlInput').value.trim(),
+    blur: parseInt(document.getElementById('bgBlur').value),
+    opacity: parseFloat(document.getElementById('bgOpacity').value),
+    scale: parseFloat(document.getElementById('bgScale').value)
+  };
+  saveData().then(() => showToast('✅ 背景设置已保存'));
+}
+
+function clearBackground() {
+  document.getElementById('bgUrlInput').value = '';
+  document.getElementById('bgBlur').value = 20;
+  document.getElementById('bgOpacity').value = 0.55;
+  document.getElementById('bgScale').value = 1.1;
+  document.getElementById('bgBlurVal').textContent = '20px';
+  document.getElementById('bgOpacityVal').textContent = '0.55';
+  document.getElementById('bgScaleVal').textContent = '1.10x';
+  currentData.bg = { url:'', blur:20, opacity:0.55, scale:1.1 };
+  saveData().then(() => showToast('已清除背景，恢复默认'));
+}
+
+function previewBackground() {
+  const url = document.getElementById('bgUrlInput').value.trim();
+  const blur = document.getElementById('bgBlur').value;
+  const opacity = document.getElementById('bgOpacity').value;
+  if (!url) { showToast('请先上传或填写图片URL', true); return; }
+  // 新窗口预览
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>背景预览</title></head><body style="margin:0;padding:0;background:#000;overflow:hidden;"><div style="position:fixed;inset:0;background:url('${url}') center/cover;opacity:${opacity};filter:blur(${blur}px);"></div><div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;"><div style="background:rgba(0,0,0,0.6);padding:40px 60px;border-radius:20px;color:white;font-family:sans-serif;text-align:center;"><h1 style="margin-bottom:16px;">预览效果</h1><p>模糊:${blur}px | 透明度:${opacity}</p><p style="margin-top:16px;font-size:13px;opacity:0.7;">关闭此窗口返回管理后台</p></div></div></body></html>`);
+}
+
+/* ============================================================
+   主题色
+   ============================================================ */
+const THEMES = {
+  blue:   { name:'默认蓝紫', desc:'清新·科技', c1:'#3b82f6', c2:'#8b5cf6' },
+  pink:   { name:'霓虹粉青', desc:'活力·赛博', c1:'#ff527c', c2:'#00ffff' },
+  redice: { name:'深红冰蓝', desc:'冷艳·高级', c1:'#d30121', c2:'#bfdeff' },
+  pop:    { name:'荧光粉绿', desc:'潮酷·撞色', c1:'#ff449e', c2:'#acfe6c' },
+  darkp:  { name:'紫黑极简', desc:'暗夜·神秘', c1:'#a855f7', c2:'#0b0c10' },
+  rose:   { name:'玫瑰红',   desc:'温柔·浪漫', c1:'#e72d48', c2:'#f1dddf' },
+  green:  { name:'苹果绿青', desc:'清新·自然', c1:'#73ae52', c2:'#3fbfd7' },
+  orange: { name:'琥珀日落', desc:'文艺·复古', c1:'#f59e0b', c2:'#d97706' },
+};
+
+function renderThemes() {
+  const grid = document.getElementById('themeGrid');
+  grid.innerHTML = '';
+  Object.keys(THEMES).forEach(key => {
+    const t = THEMES[key];
+    const card = document.createElement('div');
+    card.className = 'theme-card' + (currentData.theme === key ? ' active' : '');
+    card.innerHTML = `
+      <div class="theme-preview" style="background:linear-gradient(135deg,${t.c1},${t.c2})"></div>
+      <div class="theme-card-name">${t.name}</div>
+      <div class="theme-card-desc">${t.desc}</div>`;
+    card.onclick = () => {
+      currentData.theme = key;
+      renderThemes();
+      saveData().then(() => showToast(`已切换到「${t.name}」`));
+    };
+    grid.appendChild(card);
+  });
+}
+
+/* ============================================================
+   模块开关
+   ============================================================ */
+const MODULE_LABELS = { skills:'技能板块', projects:'项目板块', life:'生活碎片板块', social:'社交链接板块', about:'关于我板块' };
+function renderModuleToggles() {
+  const container = document.getElementById('moduleToggles');
+  container.innerHTML = '';
+  currentData.modules = currentData.modules || {};
+  Object.keys(MODULE_LABELS).forEach(key => {
+    const row = document.createElement('div');
+    row.className = 'toggle-row';
+    const enabled = currentData.modules[key] !== false;
+    row.innerHTML = `<span>${MODULE_LABELS[key]}</span><div class="toggle ${enabled?'on':''}" data-mod="${key}"></div>`;
+    container.appendChild(row);
+  });
+  container.querySelectorAll('.toggle').forEach(t => {
+    t.addEventListener('click', () => {
+      t.classList.toggle('on');
+    });
+  });
+}
+function saveModules() {
+  currentData.modules = currentData.modules || {};
+  document.querySelectorAll('.toggle[data-mod]').forEach(t => {
+    currentData.modules[t.dataset.mod] = t.classList.contains('on');
+  });
+  saveData().then(() => showToast('✅ 模块设置已保存'));
+}
+
+/* ============================================================
+   自定义代码
+   ============================================================ */
+function saveCustom() {
+  currentData.custom = currentData.custom || {};
+  currentData.custom.css = document.getElementById('customCssInput').value;
+  currentData.custom.html = document.getElementById('customHtmlInput').value;
+  saveData().then(() => showToast('✅ 自定义代码已保存'));
+}
+
+/* ============================================================
+   个人资料
+   ============================================================ */
+function saveProfile() {
+  currentData.profile = {
+    name: document.getElementById('p_name').value,
+    title: document.getElementById('p_title').value,
+    bio: document.getElementById('p_bio').value,
+    city: document.getElementById('p_city').value,
+    job: document.getElementById('p_job').value,
+    hobby: document.getElementById('p_hobby').value,
+    avatarText: document.getElementById('p_avatarText').value,
+    avatarUrl: document.getElementById('p_avatarUrl').value,
+    status: document.getElementById('p_status').value,
+    heroGreeting: document.getElementById('p_greeting').value,
+    heroName: document.getElementById('p_heroName').value,
+    heroDesc: document.getElementById('p_heroDesc').value,
+  };
+  saveData().then(() => showToast('✅ 个人资料已保存'));
+}
+
+/* ============================================================
+   技能管理
+   ============================================================ */
+function renderSkillsEditor() {
+  const container = document.getElementById('skillsEditor');
+  container.innerHTML = '';
+  currentData.skills.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'skill-row';
+    row.innerHTML = `
+      <input class="form-input" placeholder="技能名称" value="${s.name}" onchange="currentData.skills[${i}].name=this.value">
+      <input class="form-input pct-input" type="number" min="0" max="100" placeholder="%" value="${s.pct}" onchange="currentData.skills[${i}].pct=parseInt(this.value)||0">
+      <button class="btn btn-danger" onclick="removeSkill(${i})"><i class="fas fa-trash"></i></button>`;
+    container.appendChild(row);
+  });
+}
+function addSkill() { currentData.skills.push({name:'新技能',pct:80}); renderSkillsEditor(); }
+function removeSkill(i) { currentData.skills.splice(i,1); renderSkillsEditor(); }
+function saveSkills() { saveData().then(() => showToast('✅ 技能已保存')); }
+
+/* ============================================================
+   项目管理
+   ============================================================ */
+function renderProjectsEditor() {
+  const container = document.getElementById('projectsEditor');
+  container.innerHTML = '';
+  currentData.projects.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'card';
+    row.style.marginBottom = '12px';
+    row.style.padding = '16px';
+    row.innerHTML = `
+      <div class="form-row"><input class="form-input" placeholder="项目标题" value="${p.title}" onchange="currentData.projects[${i}].title=this.value"></div>
+      <div class="form-row"><textarea class="form-textarea" placeholder="项目描述" onchange="currentData.projects[${i}].desc=this.value">${p.desc}</textarea></div>
+      <div class="form-grid"><div><input class="form-input" placeholder="标签" value="${p.tag}" onchange="currentData.projects[${i}].tag=this.value"></div><div><input class="form-input" placeholder="图标(chart/camera)" value="${p.icon}" onchange="currentData.projects[${i}].icon=this.value"></div></div>
+      <button class="btn btn-danger btn-sm" onclick="currentData.projects.splice(${i},1);renderProjectsEditor();"><i class="fas fa-trash"></i> 删除</button>`;
+    container.appendChild(row);
+  });
+}
+function addProject() { currentData.projects.push({title:'新项目',desc:'描述',tag:'标签',icon:'chart'}); renderProjectsEditor(); }
+function saveProjects() { saveData().then(() => showToast('✅ 项目已保存')); }
+
+/* ============================================================
+   生活碎片
+   ============================================================ */
+const LIFE_ICONS = ['camera','music','book','heart','code','game','plane','coffee','tree','moon'];
+function renderLifeEditor() {
+  const container = document.getElementById('lifeEditor');
+  container.innerHTML = '';
+  currentData.life.forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = 'skill-row';
+    const iconSelect = LIFE_ICONS.map(ic => `<option value="${ic}" ${item.icon===ic?'selected':''}>${ic}</option>`).join('');
+    row.innerHTML = `
+      <input class="form-input" placeholder="名称" value="${item.name}" onchange="currentData.life[${i}].name=this.value">
+      <select class="form-input" style="width:120px;" onchange="currentData.life[${i}].icon=this.value">${iconSelect}</select>
+      <button class="btn btn-danger" onclick="currentData.life.splice(${i},1);renderLifeEditor();"><i class="fas fa-trash"></i></button>`;
+    container.appendChild(row);
+  });
+}
+function addLife() { currentData.life.push({name:'新兴趣',icon:'heart'}); renderLifeEditor(); }
+function saveLife() { saveData().then(() => showToast('✅ 生活碎片已保存')); }
+
+/* ============================================================
+   社交链接
+   ============================================================ */
+function saveSocial() {
+  currentData.social = {
+    github: document.getElementById('s_github').value,
+    email: document.getElementById('s_email').value,
+    wechat: document.getElementById('s_wechat').value,
+    instagram: document.getElementById('s_instagram').value,
+    xiaohongshu: document.getElementById('s_xiaohongshu').value,
+  };
+  saveData().then(() => showToast('✅ 社交链接已保存'));
+}
+
+/* ============================================================
+   数据管理
+   ============================================================ */
+function setMode(mode) {
+  localStorage.setItem('serein_mode', mode);
+  document.getElementById('modeRemote').classList.toggle('active', mode === 'remote');
+  document.getElementById('modeLocal').classList.toggle('active', mode === 'local');
+  showToast(`已切换到${mode === 'remote' ? '远程' : '本地'}模式`);
+}
+
+function saveToken() {
+  const token = document.getElementById('tokenInput').value.trim();
+  if (!token) { showToast('请输入Token', true); return; }
+  localStorage.setItem('github_token', token);
+  showToast('✅ Token 已保存到本地浏览器');
+}
+
+function exportData() {
+  const dataStr = JSON.stringify(currentData, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'serein-data.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      currentData = data;
+      fillAllForms();
+      saveData().then(() => showToast('✅ 数据导入成功'));
+    } catch(err) { showToast('JSON 解析失败', true); }
+  };
+  reader.readAsText(file);
+}
+
+function resetAll() {
+  if (!confirm('确定恢复默认数据吗？所有修改会丢失！')) return;
+  currentData = getDefaultData();
+  fillAllForms();
+  saveData().then(() => showToast('已恢复默认数据'));
+}
+
+/* ============================================================
+   保存数据（自动判断模式）
+   ============================================================ */
+async function saveData() {
+  // 始终存本地缓存
+  localStorage.setItem('serein_data', JSON.stringify(currentData));
+
+  const mode = localStorage.getItem('serein_mode') || 'remote';
+  if (mode === 'local') return;
+
+  const token = localStorage.getItem('github_token');
+  if (!token) { console.warn('无Token，仅保存到本地'); return; }
+
+  try {
+    // 获取当前文件的 SHA
+    const apiUrl = `https://api.github.com/repos/aldrchen/Sere1n/contents/${SITE.dataFile}`;
+    const headers = { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' };
+
+    let sha = '';
+    try {
+      const infoRes = await fetch(apiUrl, { headers });
+      if (infoRes.ok) sha = (await infoRes.json()).sha;
+    } catch(e) {}
+
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(currentData, null, 2))));
+    const body = { message: 'Update data via admin panel', content, ...(sha ? { sha } : {}) };
+
+    const res = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.message || '保存失败');
+    }
+    showToast('✅ 已同步到 GitHub 仓库');
+  } catch(e) {
+    console.error(e);
+    showToast('⚠️ 远程保存失败，仅存本地：' + e.message, true);
+  }
+}
+
+/* ============================================================
+   填充表单
+   ============================================================ */
+function fillAllForms() {
+  const d = currentData;
+
+  // 背景
+  document.getElementById('bgUrlInput').value = (d.bg && d.bg.url) || '';
+  document.getElementById('bgBlur').value = (d.bg && d.bg.blur) || 20;
+  document.getElementById('bgOpacity').value = (d.bg && d.bg.opacity) !== undefined ? d.bg.opacity : 0.55;
+  document.getElementById('bgScale').value = (d.bg && d.bg.scale) || 1.1;
+  document.getElementById('bgBlurVal').textContent = document.getElementById('bgBlur').value + 'px';
+  document.getElementById('bgOpacityVal').textContent = parseFloat(document.getElementById('bgOpacity').value).toFixed(2);
+  document.getElementById('bgScaleVal').textContent = parseFloat(document.getElementById('bgScale').value).toFixed(2) + 'x';
+
+  // 个人资料
+  if (d.profile) {
+    document.getElementById('p_name').value = d.profile.name || '';
+    document.getElementById('p_title').value = d.profile.title || '';
+    document.getElementById('p_bio').value = (d.profile.bio || '').replace(/<br>/g, '\n');
+    document.getElementById('p_city').value = d.profile.city || '';
+    document.getElementById('p_job').value = d.profile.job || '';
+    document.getElementById('p_hobby').value = d.profile.hobby || '';
+    document.getElementById('p_avatarText').value = d.profile.avatarText || '';
+    document.getElementById('p_avatarUrl').value = d.profile.avatarUrl || '';
+    document.getElementById('p_status').value = d.profile.status || '';
+    document.getElementById('p_greeting').value = d.profile.heroGreeting || '';
+    document.getElementById('p_heroName').value = d.profile.heroName || '';
+    document.getElementById('p_heroDesc').value = d.profile.heroDesc || '';
+  }
+
+  // 社交
+  if (d.social) {
+    document.getElementById('s_github').value = d.social.github || '';
+    document.getElementById('s_email').value = d.social.email || '';
+    document.getElementById('s_wechat').value = d.social.wechat || '';
+    document.getElementById('s_instagram').value = d.social.instagram || '';
+    document.getElementById('s_xiaohongshu').value = d.social.xiaohongshu || '';
+  }
+
+  // 自定义
+  if (d.custom) {
+    document.getElementById('customCssInput').value = d.custom.css || '';
+    document.getElementById('customHtmlInput').value = d.custom.html || '';
+  }
+
+  // 主题、模块、技能、项目、生活
+  renderThemes();
+  renderModuleToggles();
+  renderSkillsEditor();
+  renderProjectsEditor();
+  renderLifeEditor();
+
+  // 模式
+  const mode = localStorage.getItem('serein_mode') || 'remote';
+  document.getElementById('modeRemote').classList.toggle('active', mode === 'remote');
+  document.getElementById('modeLocal').classList.toggle('active', mode === 'local');
+
+  // Token
+  const token = localStorage.getItem('github_token');
+  if (token) document.getElementById('tokenInput').value = token;
+}
+
+/* 初始化 */
+loadData();
+</script>
+</body>
+</html>
